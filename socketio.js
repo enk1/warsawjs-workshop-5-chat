@@ -27,9 +27,15 @@ module.exports = server => {
     users[user.name] = user;
 
     //helpers functions
+     const loginUser = (name, token) => {
+      user.logged = true;
+      socket.emit(EVENTS.LOGGED, token);
+      changeUserName(name);
+      socket.emit(EVENTS.MESSAGE, `Zalogowano pomyślnie`);
+    };
+
     const changeUserName = (name) => {
       const oldName = user.name;
-
       user.name = name;
       users[name] = user;
 
@@ -98,6 +104,7 @@ module.exports = server => {
       });
     };
     const onLogin = async ({name, password}) => {
+        console.log(['socket.on'], EVENTS.LOGIN, { name, password });
         const token = await login({name, password});
 
         if(token) {
@@ -105,6 +112,7 @@ module.exports = server => {
            socket.emit(EVENTS.MESSAGE, `Logowanie przebiegło pomyślnie`);
            socket.emit(EVENTS.LOGGED, token);
            changeUserName(name);           
+           login(name, token);
         } else {
            socket.emit(EVENTS.ERROR, `Logowanie nie powiodło się. Błąd: ${error}`);
       }
@@ -116,20 +124,21 @@ module.exports = server => {
            socket.emit(EVENTS.MESSAGE, `Rejestracja przebiegła pomyślnie. Automatyczne logowanie`);
             socket.emit(EVENTS.LOGGED, token);
             user.logged = true;
-           changeUserName(name);           
+           register(name, token);          
         } else {
            socket.emit(EVENTS.ERROR, `Rejestracja nie powiodła się. Błąd: ${error}`);
       }
     };
 
-    const preventLogged = next =>(...args) => {
+    const preventLogged = (next) =>(...args) => {
       if(user.logged) {
           socket.emit(EVENTS.MESSAGE, 'operacja dozwolona tylko dla niezalogowanych użytkowników.');
           return false;
       } else {
-          next(...args);
+          return next(...args);
       }
     }
+    const onTokenVerifyFail = () => socket.emit(EVENTS.ERROR, `Operacja dostępna tylko dla autoryzowanych użytkowników`);
 
     // join room and emit initial data
     socket.join(user.room, () => {

@@ -31,7 +31,7 @@ const register = async ({name, password}) => {
     try {
         const success = await addUser({name, password});
         if(success) {
-            return await sign({name, password}, SEKRET);;
+            return await sign(name, password, SEKRET);;
         } else {
             return null;
         }
@@ -46,7 +46,7 @@ const login = async ({name, password}) => {
     try {
         const success = await getUser({name, password});
         if(success) {
-            return await sign({name}, SEKRET);
+            return await sign(name, password, SEKRET);
         } else {
             return null;
         }
