@@ -8,6 +8,7 @@ const app = express();
 const server = http.Server(app);
 
 require('./socketio')(server);
+require('./db/init');
 
 app.get('/', (req, res) => res.sendFile(resolve(__dirname, './index.html')));
 server.listen(PORT, () => console.log([`listening on port ${PORT}`]));
