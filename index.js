@@ -1,8 +1,6 @@
-
 const http = require('http');
 const { resolve } = require('path');
 const express = require('express');
-
 
 const PORT = process.env.PORT || '30001';
 

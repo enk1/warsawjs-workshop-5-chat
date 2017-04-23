@@ -5,6 +5,7 @@ module.exports = server => {
     let connections = 0;
     const connected = {};
     const users = {};
+    const rooms = ['Poczekalnia'];
 
     io.on('connection', socket => {
          console.log(socket.id);
@@ -19,6 +20,7 @@ module.exports = server => {
          connected[socket.id] = users[user.name];
 
          io.local.emit('message', `Użytkownik ${user.name} wszedł do pokoju.`);
+         socket.emit('rooms', rooms);
 
          socket.join(user.room, () => {
              console.log([`Użytkownik dołączył do pokoju ${user.name}`]);
