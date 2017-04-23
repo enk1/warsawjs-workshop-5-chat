@@ -13,11 +13,13 @@ const EVENTS = {
   PM: 'pm',
   LOGIN: 'login',
   REGISTER: 'register',
-  SEKRET: 'qwerty',
+  LOGGED: 'logged',
 };
+SEKRET = 'qwerty',
 
 module.exports = {
   DEFAULT_ROOM,
   DEFAULT_NAME,
   EVENTS,
+  SEKRET,
 };

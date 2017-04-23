@@ -1,7 +1,7 @@
 const sqlite = require('sqlite');
 const { compare, hash } = require('bcrypt-as-promised'); 
 const SALT = 10;
-//const { DEFAULT_SALT } = require('../constans');
+
 
 const addUser = async ({name, password}) => {
     console.log(['api.addUser'], {name, password});
@@ -41,6 +41,8 @@ const logUserMessage = async ({ name, room, message }) => {
     await db.run(`INSERT into messages(user, message, room, timestamp) VALUES ('${name}', '${message}', '${room}','${time}')`);
     const messages = await db.all('SELECT * FROM messages');
 };
+
+
 
 module.exports = {
     addUser,

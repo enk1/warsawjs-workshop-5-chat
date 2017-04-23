@@ -1,6 +1,7 @@
 const socketio = require('socket.io');
+const { logUserMessage } = require('./db/api');
 const { DEFAULT_NAME, DEFAULT_ROOM, EVENTS } = require('./constans');
-const { addUser, getUser, logUserMessage } = require('./db/api');
+const { login, register, verifyToken } = require('./authenticate');
 
 
 module.exports = server => {
@@ -38,7 +39,6 @@ module.exports = server => {
       io.local.emit(EVENTS.USERS, Object.keys(users));
       io.local.emit(EVENTS.MESSAGE, `Użytkownik ${oldName} zmienił nazwę na: '${name}'`);
     };
-
     // event handlers
     const onDisconnect = () => {
       console.log(['io.on'], EVENTS.DISCONNECT, connected);
@@ -98,24 +98,25 @@ module.exports = server => {
       });
     };
     const onLogin = async ({name, password}) => {
-        const success = await getUser({name, password});
-        if(success) {
+        const token = await login({name, password});
+
+        if(token) {
+          user.logged = true;
            socket.emit(EVENTS.MESSAGE, `Logowanie przebiegło pomyślnie`);
-           changeUserName(name);
-           user.logged = true;
+           socket.emit(EVENTS.LOGGED, token);
+           changeUserName(name);           
         } else {
            socket.emit(EVENTS.ERROR, `Logowanie nie powiodło się. Błąd: ${error}`);
       }
-
-
     };
     const onRegister = async ({name, password}) => {
         console.log(['socket.on'], EVENTS.REGISTER, { name, password });
-        const success = await addUser({name, password});
-        if(success) {
+        const token = await register({name, password});
+        if(token) {
            socket.emit(EVENTS.MESSAGE, `Rejestracja przebiegła pomyślnie. Automatyczne logowanie`);
-           changeUserName(name);
-           user.logged = true;
+            socket.emit(EVENTS.LOGGED, token);
+            user.logged = true;
+           changeUserName(name);           
         } else {
            socket.emit(EVENTS.ERROR, `Rejestracja nie powiodła się. Błąd: ${error}`);
       }
@@ -143,7 +144,9 @@ module.exports = server => {
     socket.on(EVENTS.DISCONNECT, onDisconnect);
     socket.on(EVENTS.MESSAGE, onMessage);
     socket.on(EVENTS.NAME, onName);
-    socket.on(EVENTS.PM, onPM);
+    socket.on(EVENTS.PM, verifyToken(onPM, () => {
+      socket.emit(EVENTS.MESSAGE, `Operacja dostępna dla zalogowanych`);
+    }));
     socket.on(EVENTS.ROOM, onRoom);
     socket.on(EVENTS.LOGIN, preventLogged(onLogin));
     socket.on(EVENTS.REGISTER, preventLogged(onRegister));
