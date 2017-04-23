@@ -17,6 +17,7 @@ module.exports = server => {
       id: socket.id,
       room: DEFAULT_ROOM,
       name: `${DEFAULT_NAME}${connections}`,
+      logged: false,
     };
 
     // add user to connected users and create mapping for accessing users info by name and socket id
@@ -97,6 +98,15 @@ module.exports = server => {
       });
     };
     const onLogin = async ({name, password}) => {
+        const success = await getUser({name, password});
+        if(success) {
+           socket.emit(EVENTS.MESSAGE, `Logowanie przebiegło pomyślnie`);
+           changeUserName(name);
+           user.logged = true;
+        } else {
+           socket.emit(EVENTS.ERROR, `Logowanie nie powiodło się. Błąd: ${error}`);
+      }
+
 
     };
     const onRegister = async ({name, password}) => {
@@ -105,10 +115,20 @@ module.exports = server => {
         if(success) {
            socket.emit(EVENTS.MESSAGE, `Rejestracja przebiegła pomyślnie. Automatyczne logowanie`);
            changeUserName(name);
+           user.logged = true;
         } else {
            socket.emit(EVENTS.ERROR, `Rejestracja nie powiodła się. Błąd: ${error}`);
       }
     };
+
+    const preventLogged = next =>(...args) => {
+      if(user.logged) {
+          socket.emit(EVENTS.MESSAGE, 'operacja dozwolona tylko dla niezalogowanych użytkowników.');
+          return false;
+      } else {
+          next(...args);
+      }
+    }
 
     // join room and emit initial data
     socket.join(user.room, () => {
@@ -125,7 +145,7 @@ module.exports = server => {
     socket.on(EVENTS.NAME, onName);
     socket.on(EVENTS.PM, onPM);
     socket.on(EVENTS.ROOM, onRoom);
-    socket.on(EVENTS.LOGIN, onLogin);
-    socket.on(EVENTS.REGISTER, onRegister);
+    socket.on(EVENTS.LOGIN, preventLogged(onLogin));
+    socket.on(EVENTS.REGISTER, preventLogged(onRegister));
   });
 };
