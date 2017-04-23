@@ -1,5 +1,7 @@
 const socketio = require('socket.io');
 const { DEFAULT_NAME, DEFAULT_ROOM, EVENTS } = require('./constans');
+const { addUser, getUser, logUserMessage } = require('./db/api');
+
 
 module.exports = server => {
   const io = socketio(server);
@@ -49,6 +51,7 @@ module.exports = server => {
     };
     const onMessage = ({ message }) => {
       console.log(['socket.on'], EVENTS.MESSAGE, { message });
+      logUserMessage(Object.assign({}, user, {message}));
 
       io.sockets.in(user.room).emit(EVENTS.MESSAGE, `${user.name}: ${message}`);
     };
@@ -93,6 +96,19 @@ module.exports = server => {
         socket.emit(EVENTS.ROOM, room);
       });
     };
+    const onLogin = async ({name, password}) => {
+
+    };
+    const onRegister = async ({name, password}) => {
+        console.log(['socket.on'], EVENTS.REGISTER, { name, password });
+        const success = await addUser({name, password});
+        if(success) {
+           socket.emit(EVENTS.MESSAGE, `Rejestracja przebiegła pomyślnie. Automatyczne logowanie`);
+           changeUserName(name);
+        } else {
+           socket.emit(EVENTS.ERROR, `Rejestracja nie powiodła się. Błąd: ${error}`);
+      }
+    };
 
     // join room and emit initial data
     socket.join(user.room, () => {
@@ -109,5 +125,7 @@ module.exports = server => {
     socket.on(EVENTS.NAME, onName);
     socket.on(EVENTS.PM, onPM);
     socket.on(EVENTS.ROOM, onRoom);
+    socket.on(EVENTS.LOGIN, onLogin);
+    socket.on(EVENTS.REGISTER, onRegister);
   });
 };
