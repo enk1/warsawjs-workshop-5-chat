@@ -12,7 +12,8 @@ const EVENTS = {
   NAME: 'name',
   PM: 'pm',
   LOGIN: 'login',
-  REGISTER: 'register'
+  REGISTER: 'register',
+  SEKRET: 'qwerty',
 };
 
 module.exports = {
